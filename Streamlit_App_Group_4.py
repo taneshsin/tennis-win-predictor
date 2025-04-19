@@ -166,6 +166,7 @@ if all(k in st.session_state for k in ['prob', 'input_data']):
             "Player 1 Rank": rank_1,
             "Player 2 Rank": rank_2,
             "Predicted Prob P1": round(float(prob), 4),
+            "Predicted Prob P2": round(1 - float(prob), 4),
             "User Feedback": feedback,
             "Improvement Suggestion": improvement
         }
