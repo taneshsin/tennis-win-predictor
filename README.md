@@ -46,7 +46,7 @@ python train_model.py
 
 ### 6. Launch the Streamlit App
 ```
-streamlit run streamlit_app.py
+streamlit run Streamlit_App_Group_4.py
 ```
 
 
