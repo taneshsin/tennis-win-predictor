@@ -6,8 +6,8 @@ import matplotlib.pyplot as plt
 import shap
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
-from evidently.report import Report
-from evidently.metric_preset import DataDriftPreset
+from scipy.stats import ks_2samp
+import numpy as np
 
 # ============================ PAGE CONFIG ============================
 st.set_page_config(
@@ -118,15 +118,24 @@ if all(k in st.session_state for k in ['prob', 'input_data']):
             shap.plots.waterfall(shap_values[0], max_display=8, show=False)
             st.pyplot(bbox_inches='tight')
 
-    # ============================ DATA DRIFT ============================
-    if st.checkbox("\ud83d\udcc9 Show Data Drift Report"):
+    # ============================ CUSTOM DATA DRIFT ============================
+    if st.checkbox("📉 Show Data Drift Report"):
         try:
-            reference_data = pd.read_csv("X_train_sample.csv")
-            report = Report(metrics=[DataDriftPreset()])
-            report.run(reference_data=reference_data, current_data=input_data)
-            report.save_html("drift_report.html")
-            with open("drift_report.html", "r", encoding="utf-8") as f:
-                st.components.v1.html(f.read(), height=800, scrolling=True)
+            ref_data = pd.read_csv("X_train_sample.csv")
+            drift_results = []
+            for col in ref_data.columns:
+                if ref_data[col].dtype in [np.float64, np.int64, np.float32]:
+                    stat, p = ks_2samp(ref_data[col], input_data[col])
+                    drift_results.append({
+                        "Feature": col,
+                        "Drift Detected": "✅ Yes" if p < 0.05 else "❌ No",
+                        "p-value": round(p, 4)
+                    })
+            drift_df = pd.DataFrame(drift_results)
+            st.dataframe(drift_df)
+            total = len(drift_df)
+            drifted = drift_df['Drift Detected'].value_counts().get("✅ Yes", 0)
+            st.markdown(f"🔍 Drift detected in **{drifted}/{total}** features.")
         except Exception as e:
             st.error(f"Error generating drift report: {e}")
 
@@ -134,7 +143,7 @@ if all(k in st.session_state for k in ['prob', 'input_data']):
     st.markdown("---")
     st.subheader("🗣️ Share Your Feedback")
     feedback = st.radio("Was the prediction correct?", ["Yes", "No", "Not Sure"])
-    improvement = st.text_area("\ud83d\udca1 Suggestions to improve the model or app:", placeholder="Player 1 was just back from injury, prediction felt too low, UI improvement, etc.")
+    improvement = st.text_area("💡 Suggestions to improve the model or app:", placeholder="Player 1 was just back from injury, prediction felt too low, UI improvement, etc.")
 
     def save_feedback_to_gsheet(feedback_dict):
         try:
@@ -142,10 +151,8 @@ if all(k in st.session_state for k in ['prob', 'input_data']):
             creds = ServiceAccountCredentials.from_json_keyfile_dict(dict(st.secrets["gspread"]), scope)
             client = gspread.authorize(creds)
             sheet = client.open("Tennis Feedback").sheet1
-
             if sheet.row_count == 0 or not sheet.get_all_values():
                 sheet.append_row(list(feedback_dict.keys()))
-
             sheet.append_row([str(v) for v in feedback_dict.values()])
             return True
         except Exception as e:
@@ -164,10 +171,10 @@ if all(k in st.session_state for k in ['prob', 'input_data']):
         }
         success = save_feedback_to_gsheet(feedback_dict)
         if success:
-            st.success("\u2705 Thank you! Your feedback has been recorded in Google Sheets.")
+            st.success("✅ Thank you! Your feedback has been recorded in Google Sheets.")
         else:
-            st.warning("\u26a0\ufe0f Feedback was not saved. Please try again later.")
+            st.warning("⚠️ Feedback was not saved. Please try again later.")
 
 # ============================ FOOTER ============================
 st.markdown("---")
-st.markdown("<div style='text-align: center;'>Made with ❤️ by <strong>Group 4</strong> | Powered by <strong>XGBoost</strong>, <strong>Streamlit</strong>, <strong>Evidently</strong>, and <strong>Google Sheets</strong></div>", unsafe_allow_html=True)
+st.markdown("<div style='text-align: center;'>Made with ❤️ by <strong>Group 4</strong> | Powered by <strong>XGBoost</strong>, <strong>Streamlit</strong>, and <strong>Google Sheets</strong></div>", unsafe_allow_html=True)
