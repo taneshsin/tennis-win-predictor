@@ -1,19 +1,17 @@
 # 🎾 Tennis Match Win Predictor
 
-A machine learning project that predicts win probabilities in ATP men’s tennis matches based on court type, match round, player rankings, and other metadata.
-
-This project was built as part of the **IS8036 Final Project** to demonstrate the integration of DataOps, ModelOps, and a user-friendly Streamlit app interface for practical ML deployment.
+A machine learning project that predicts win probabilities in ATP men’s tennis matches using match conditions, player ranks, and court metadata.
 
 ---
 
 ## 🚀 Features
 
-- ✅ Predict win probability between two players
-- 🏟️ Inputs include surface, court type, series, round, and set format
-- 🧠 XGBoost ML model trained on historical ATP data
-- 📈 SHAP explainability to understand feature impact
-- 📊 MLflow for experiment tracking and model versioning
-- 🌐 Streamlit app for easy and intuitive user interaction
+- 🎯 Predict win probability between two players
+- 🧠 XGBoost model trained on historical ATP data
+- 📊 Streamlit UI for easy usage
+- 🔬 SHAP explainability for feature insights
+- 📉 Data drift detection with Evidently
+- 🧪 Experiment tracking with MLflow
 
 ---
 
@@ -21,14 +19,24 @@ This project was built as part of the **IS8036 Final Project** to demonstrate th
 
 ### 1. Clone the repository
 ```bash
-git clone https://github.com/your-username/tennis-win-predictor.git
+git clone https://github.com/taneshsin/tennis-win-predictor.git
 cd tennis-win-predictor
 
+## 2. (Recommended) Create & Activate a Virtual Environment
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
 
-### 2. Install dependencies
-```bash
+
+## Install the Required Packages
 pip install -r requirements.txt
 
+## If you don't have a requirements.txt, install manually:
+pip install pandas numpy scikit-learn xgboost shap joblib streamlit mlflow evidently matplotlib
 
-### 3. Launch the Streamlit app
+## Train the Model (Optional – if you want to retrain)
+python train_model.py
+
+
+##  Launch the Streamlit App
 streamlit run streamlit_app.py
+
