@@ -13,6 +13,14 @@ A machine learning project that predicts win probabilities in ATP men’s tennis
 - 📉 Data drift detection with Evidently
 - 🧪 Experiment tracking with MLflow
 
+## 🗣️ User Feedback Collection
+
+The app includes a built-in feedback form that allows users to:
+
+- ✅ Confirm if the prediction was correct  
+- 💬 Share suggestions (e.g., "Player was injured", "UI felt unclear", etc.)  
+- 📄 All feedback is stored in a connected Google Sheet for future model improvements
+
 ---
 
 ## 🛠 How to Run the Project
