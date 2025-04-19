@@ -58,8 +58,9 @@ streamlit run Streamlit_App_Group_4.py
 ```
 
 
-📌 Project Status 
-✅ MVP complete 
-📈 Model deployed via Streamlit 
-🧪 Drift detection integrated
-⚙️ Further enhancements possible (live API, more models, CI/CD)
+📌 Project Status
+✅ MVP Completed
+🚀 Model deployed via Streamlit Cloud
+📉 Data drift detection integrated using Evidently
+🗣️ Live user feedback captured via Google Sheets
+⚙️ Future enhancements: real-time data API, advanced models, CI/CD integration
