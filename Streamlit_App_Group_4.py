@@ -6,6 +6,8 @@ import matplotlib.pyplot as plt
 import shap
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
+from evidently.report import Report
+from evidently.metric_preset import DataDriftPreset
 
 # ============================ PAGE CONFIG ============================
 st.set_page_config(
@@ -87,7 +89,6 @@ if all(k in st.session_state for k in ['prob', 'input_data']):
     col1.metric(label=player_1, value=f"{prob:.2%}", help=f"ATP Rank: {rank_1}")
     col2.metric(label=player_2, value=f"{(1 - prob):.2%}", help=f"ATP Rank: {rank_2}")
 
-    # Bar Chart
     fig, ax = plt.subplots(figsize=(6, 4))
     bars = ax.bar([player_1, player_2], [prob, 1 - prob], color=['#00FF99', '#FF4C4C'], edgecolor='white', width=0.5)
     for bar in bars:
@@ -104,7 +105,6 @@ if all(k in st.session_state for k in ['prob', 'input_data']):
         spine.set_color('white')
     st.pyplot(fig)
 
-    # SHAP
     if st.checkbox("🔬 Show Advanced Insights (SHAP Explainability)"):
         explainer = shap.Explainer(model)
         shap_values = explainer(input_data)
@@ -118,24 +118,31 @@ if all(k in st.session_state for k in ['prob', 'input_data']):
             shap.plots.waterfall(shap_values[0], max_display=8, show=False)
             st.pyplot(bbox_inches='tight')
 
+    # ============================ DATA DRIFT ============================
+    if st.checkbox("\ud83d\udcc9 Show Data Drift Report"):
+        try:
+            reference_data = pd.read_csv("X_train_sample.csv")
+            report = Report(metrics=[DataDriftPreset()])
+            report.run(reference_data=reference_data, current_data=input_data)
+            report.save_html("drift_report.html")
+            with open("drift_report.html", "r", encoding="utf-8") as f:
+                st.components.v1.html(f.read(), height=800, scrolling=True)
+        except Exception as e:
+            st.error(f"Error generating drift report: {e}")
+
     # ============================ USER FEEDBACK ============================
     st.markdown("---")
     st.subheader("🗣️ Share Your Feedback")
-
     feedback = st.radio("Was the prediction correct?", ["Yes", "No", "Not Sure"])
-    improvement = st.text_area("💡 Suggestions to improve the model or app:", placeholder="e.g., Player was injured...")
+    improvement = st.text_area("\ud83d\udca1 Suggestions to improve the model or app:", placeholder="Player 1 was just back from injury, prediction felt too low, UI improvement, etc.")
 
     def save_feedback_to_gsheet(feedback_dict):
         try:
-            scope = [
-                "https://spreadsheets.google.com/feeds",
-                "https://www.googleapis.com/auth/drive"
-            ]
+            scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
             creds = ServiceAccountCredentials.from_json_keyfile_dict(dict(st.secrets["gspread"]), scope)
             client = gspread.authorize(creds)
             sheet = client.open("Tennis Feedback").sheet1
 
-            # Write header if sheet is empty
             if sheet.row_count == 0 or not sheet.get_all_values():
                 sheet.append_row(list(feedback_dict.keys()))
 
@@ -155,14 +162,12 @@ if all(k in st.session_state for k in ['prob', 'input_data']):
             "User Feedback": feedback,
             "Improvement Suggestion": improvement
         }
-
         success = save_feedback_to_gsheet(feedback_dict)
-
         if success:
-            st.success("✅ Thank you! Your feedback has been recorded in Google Sheets.")
+            st.success("\u2705 Thank you! Your feedback has been recorded in Google Sheets.")
         else:
-            st.warning("⚠️ Feedback was not saved. Please try again later.")
+            st.warning("\u26a0\ufe0f Feedback was not saved. Please try again later.")
 
 # ============================ FOOTER ============================
 st.markdown("---")
-st.markdown("<div style='text-align: center;'>Made with ❤️ by <strong>Group 4</strong> | Powered by <strong>XGBoost</strong>, <strong>Streamlit</strong>, and <strong>Google Sheets</strong></div>", unsafe_allow_html=True)
+st.markdown("<div style='text-align: center;'>Made with ❤️ by <strong>Group 4</strong> | Powered by <strong>XGBoost</strong>, <strong>Streamlit</strong>, <strong>Evidently</strong>, and <strong>Google Sheets</strong></div>", unsafe_allow_html=True)
