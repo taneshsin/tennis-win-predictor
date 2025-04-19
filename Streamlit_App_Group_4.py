@@ -4,6 +4,8 @@ import joblib
 import os
 import matplotlib.pyplot as plt
 import shap
+import gspread
+from oauth2client.service_account import ServiceAccountCredentials
 
 # ============================ PAGE CONFIG ============================
 st.set_page_config(
@@ -16,15 +18,15 @@ st.set_page_config(
 model = joblib.load("model.pkl")
 player_rank_map = joblib.load("player_ranks.pkl")
 
-# ============================ LOAD ENCODING MAPS ============================
+# ============================ ENCODING MAPS ============================
 surface_values = ['Carpet', 'Clay', 'Grass', 'Hard']
 series_values = ['ATP250', 'ATP500', 'Grand Slam', 'International', 'International Gold', 'Masters', 'Masters 1000', 'Masters Cup']
 round_values = ['1st Round', '2nd Round', '3rd Round', '4th Round', 'Quarterfinals', 'Round Robin', 'Semifinals', 'The Final']
+court_map = {"Outdoor": 0, "Indoor": 1}
 
 surface_map = {name: i for i, name in enumerate(surface_values)}
 series_map = {name: i for i, name in enumerate(series_values)}
 round_map = {name: i for i, name in enumerate(round_values)}
-court_map = {"Outdoor": 0, "Indoor": 1}
 
 # ============================ HEADER ============================
 st.markdown("<h1 style='text-align: center; color: #336699;'>🎾 ATP Tennis Match Win Predictor</h1>", unsafe_allow_html=True)
@@ -71,7 +73,7 @@ if st.button("🎯 Predict Win Probability") and player_1 != player_2:
     st.session_state['rank_1'] = rank_1
     st.session_state['rank_2'] = rank_2
 
-# ============================ SHOW RESULT ============================
+# ============================ SHOW RESULTS ============================
 if all(k in st.session_state for k in ['prob', 'input_data']):
     prob = st.session_state['prob']
     input_data = st.session_state['input_data']
@@ -85,53 +87,82 @@ if all(k in st.session_state for k in ['prob', 'input_data']):
     col1.metric(label=player_1, value=f"{prob:.2%}", help=f"ATP Rank: {rank_1}")
     col2.metric(label=player_2, value=f"{(1 - prob):.2%}", help=f"ATP Rank: {rank_2}")
 
+    # Bar Chart
     fig, ax = plt.subplots(figsize=(6, 4))
-    bars = ax.bar(
-        [player_1, player_2],
-        [prob, 1 - prob],
-        color=['#00FF99', '#FF4C4C'],
-        edgecolor='white',
-        width=0.5
-    )
-
+    bars = ax.bar([player_1, player_2], [prob, 1 - prob], color=['#00FF99', '#FF4C4C'], edgecolor='white', width=0.5)
     for bar in bars:
         height = bar.get_height()
-        ax.annotate(f'{height:.0%}',
-                    xy=(bar.get_x() + bar.get_width() / 2, height),
-                    xytext=(0, 6),
-                    textcoords="offset points",
-                    ha='center', va='bottom',
+        ax.annotate(f'{height:.0%}', xy=(bar.get_x() + bar.get_width() / 2, height),
+                    xytext=(0, 6), textcoords="offset points", ha='center', va='bottom',
                     fontsize=11, fontweight='bold', color='white')
-
     ax.set_ylim(0, 1)
-    ax.set_ylabel("Win Probability", fontsize=12, color='white')
     ax.set_facecolor('#111111')
     fig.patch.set_facecolor('#111111')
     ax.grid(axis='y', linestyle='--', alpha=0.3, color='gray')
     ax.tick_params(colors='white')
     for spine in ax.spines.values():
         spine.set_color('white')
-
     st.pyplot(fig)
 
-    # SHAP Explainability
+    # SHAP
     if st.checkbox("🔬 Show Advanced Insights (SHAP Explainability)"):
-        st.markdown("## 🔍 Why Did the Model Predict This?")
-
         explainer = shap.Explainer(model)
         shap_values = explainer(input_data)
-
         shap_df = pd.DataFrame({
             'Feature': input_data.columns,
             'SHAP Value': shap_values.values[0]
         }).sort_values(by='SHAP Value', key=abs, ascending=False)
-
         st.dataframe(shap_df)
 
         with st.expander("📊 View SHAP Waterfall Plot"):
             shap.plots.waterfall(shap_values[0], max_display=8, show=False)
             st.pyplot(bbox_inches='tight')
 
+    # ============================ USER FEEDBACK ============================
+    st.markdown("---")
+    st.subheader("🗣️ Share Your Feedback")
+
+    feedback = st.radio("Was the prediction correct?", ["Yes", "No", "Not Sure"])
+    improvement = st.text_area("💡 Suggestions to improve the model or app:", placeholder="e.g., Player was injured...")
+
+    def save_feedback_to_gsheet(feedback_dict):
+        try:
+            scope = [
+                "https://spreadsheets.google.com/feeds",
+                "https://www.googleapis.com/auth/drive"
+            ]
+            creds = ServiceAccountCredentials.from_json_keyfile_dict(dict(st.secrets["gspread"]), scope)
+            client = gspread.authorize(creds)
+            sheet = client.open("Tennis Feedback").sheet1
+
+            # Write header if sheet is empty
+            if sheet.row_count == 0 or not sheet.get_all_values():
+                sheet.append_row(list(feedback_dict.keys()))
+
+            sheet.append_row([str(v) for v in feedback_dict.values()])
+            return True
+        except Exception as e:
+            st.error(f"Google Sheets error: {e}")
+            return False
+
+    if st.button("Submit Feedback"):
+        feedback_dict = {
+            "Player 1": player_1,
+            "Player 2": player_2,
+            "Player 1 Rank": rank_1,
+            "Player 2 Rank": rank_2,
+            "Predicted Prob P1": round(float(prob), 4),
+            "User Feedback": feedback,
+            "Improvement Suggestion": improvement
+        }
+
+        success = save_feedback_to_gsheet(feedback_dict)
+
+        if success:
+            st.success("✅ Thank you! Your feedback has been recorded in Google Sheets.")
+        else:
+            st.warning("⚠️ Feedback was not saved. Please try again later.")
+
 # ============================ FOOTER ============================
 st.markdown("---")
-st.markdown("<div style='text-align: center;'>Made with ❤️ by <strong>Group 4</strong> | Powered by <strong>XGBoost</strong> & <strong>Streamlit</strong></div>", unsafe_allow_html=True)
+st.markdown("<div style='text-align: center;'>Made with ❤️ by <strong>Group 4</strong> | Powered by <strong>XGBoost</strong>, <strong>Streamlit</strong>, and <strong>Google Sheets</strong></div>", unsafe_allow_html=True)
