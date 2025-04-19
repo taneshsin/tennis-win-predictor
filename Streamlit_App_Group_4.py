@@ -38,7 +38,7 @@ surface = st.sidebar.selectbox("Surface", surface_values)
 court = st.sidebar.selectbox("Court Type", list(court_map.keys()))
 series = st.sidebar.selectbox("Series", series_values)
 round_ = st.sidebar.selectbox("Round", round_values)
-best_of = st.sidebar.slider("Best of Sets", 3, 5, 3)
+best_of = st.sidebar.selectbox("Best of Sets", [3, 5])
 
 players = sorted([p.title() for p in player_rank_map.keys()])
 player_1 = st.sidebar.selectbox("Player 1", players)
