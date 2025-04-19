@@ -44,13 +44,14 @@ pip install pandas numpy scikit-learn xgboost shap joblib streamlit mlflow evide
 python train_model.py
 ```
 
-
-📌 Project Status
-✅ MVP complete
-📈 Model deployed via Streamlit
-🧪 Drift detection integrated
-⚙️ Further enhancements possible (live API, more models, CI/CD)
 ### 6. Launch the Streamlit App
 ```
 streamlit run streamlit_app.py
 ```
+
+
+📌 Project Status 
+✅ MVP complete 
+📈 Model deployed via Streamlit 
+🧪 Drift detection integrated
+⚙️ Further enhancements possible (live API, more models, CI/CD)
