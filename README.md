@@ -21,22 +21,25 @@ A machine learning project that predicts win probabilities in ATP men’s tennis
 ```bash
 git clone https://github.com/taneshsin/tennis-win-predictor.git
 cd tennis-win-predictor
-
-## 2. (Recommended) Create & Activate a Virtual Environment
+```
+```
+### 2. (Recommended) Create & Activate a Virtual Environment
 python -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
+```
 
-
-## Install the Required Packages
+```
+### 3. Install the Required Packages
 pip install -r requirements.txt
-
-## If you don't have a requirements.txt, install manually:
+```
+```
+### 4. If you don't have a requirements.txt, install manually:
 pip install pandas numpy scikit-learn xgboost shap joblib streamlit mlflow evidently matplotlib
-
-## Train the Model (Optional – if you want to retrain)
+```
+``` ### 5. Train the Model (Optional – if you want to retrain)
 python train_model.py
-
-
-##  Launch the Streamlit App
+```
+```
+### 6. Launch the Streamlit App
 streamlit run streamlit_app.py
-
+```
