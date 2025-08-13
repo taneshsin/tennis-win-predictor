@@ -178,4 +178,4 @@ if all(k in st.session_state for k in ['prob', 'input_data']):
 
 # ============================ FOOTER ============================
 st.markdown("---")
-st.markdown("<div style='text-align: center;'>Made with ❤️ by <strong>Group 4</strong> | Powered by <strong>XGBoost</strong>, <strong>Streamlit</strong>, and <strong>Google Sheets</strong></div>", unsafe_allow_html=True)
+st.markdown("<div style='text-align: center;'>Designed and Created by <strong>Ananth Raman and Tanesh Singhal</strong> | Powered by <strong>XGBoost</strong>, <strong>Streamlit</strong>, and <strong>Google Sheets</strong></div>", unsafe_allow_html=True)
